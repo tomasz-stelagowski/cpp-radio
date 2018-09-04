@@ -1,3 +1,0 @@
-Przykładowe uruchomienie:
-
-sox -S "./snsd.aiff" -r 44100 -b 16 -e signed-integer -c 2 -t raw - | pv -q -L $((44100*4)) | ./sikradio-sender -a 255.255.255.255

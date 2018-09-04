@@ -99,8 +99,8 @@ void stdin_reader(int psize, message_driven_thread<message>* packet_sender){
         memset(input_buff, 0, psize);
         std::cin.read(input_buff, psize);
         if(std::cin){
-            std::cout << "Size of read input: " << strlen(input_buff) << "Psize: "<< psize << std::endl;    
-            packet_sender->post_message({ INPUT, std::string(input_buff) });
+        //    std::cout << "Size of read input: " << std::string(input_buff, psize).size() << "Psize: "<< psize << std::endl;    
+            packet_sender->post_message({ INPUT, std::string(input_buff, psize) });
         }
     } while(std::cin);
 

@@ -25,15 +25,15 @@ void parse_command_line(int argc, char** argv,
 
 // Struct representing messages sent to message_dirven_thread
 
-struct audio_packeg {
+struct audio_package {
     uint64_t session_id;
     uint64_t first_byte_num;
-  //  uint8_t[] audio_data;
+    std::string audio_data;
 };
 
 struct message {
     std::string type;
-    std::string msg;
+    audio_package msg;
 };
 
 
@@ -50,7 +50,7 @@ private:
     void on_rexmit_message(message msg);
 };
 
-void stdin_reader(int psize, message_driven_thread<message>* packet_sender);
+void stdin_reader(uint64_t session_id, int psize, message_driven_thread<message>* packet_sender);
 
 void network_listener(int ctrl_port, std::string mcast_addr, int data_port, 
     std::string station_name, message_driven_thread<message>* packet_sender);
@@ -75,7 +75,7 @@ int main(int argc, char** argv) {
 
     message_driven_thread<message>* broadcast_sender = new sender_thread(data_port, mcast_address);
     
-    std::thread stdin_reader_thread(stdin_reader, psize, broadcast_sender);
+    std::thread stdin_reader_thread(stdin_reader, session_id, psize, broadcast_sender);
     std::thread network_listener_thread(network_listener, ctrl_port, 
         mcast_address, data_port, station_name, broadcast_sender);
 
@@ -92,14 +92,17 @@ int main(int argc, char** argv) {
 // Responsible for reading input in psize chunks of data
 // works in its own thread, proceeds data to broadcasting thread
 // ******************************************************
-void stdin_reader(int psize, message_driven_thread<message>* packet_sender){
+void stdin_reader(uint64_t session_id, int psize, message_driven_thread<message>* packet_sender){
     char* input_buff = new char[psize];
 
     do {
         memset(input_buff, 0, psize);
         std::cin.read(input_buff, psize);
         if(std::cin){
-            packet_sender->post_message({ INPUT, std::string(input_buff, psize) });
+            packet_sender->post_message({ 
+                INPUT, 
+                { session_id, 0, std::string(input_buff, psize) }
+            });
         }
     } while(std::cin);
 
@@ -134,10 +137,10 @@ void network_listener(int ctrl_port, std::string mcast_addr, int data_port,
         if(recvfrom(sock, udp_buffer, UDP_BUFFER_SIZE, 0, &client_address, &caddr_len) < 0)
             syserr("Error with receiving datagram");
         
-        std::string message(udp_buffer);
+        std::string received_request(udp_buffer);
 
         std::vector<std::string> strs;
-        boost::split(strs, message, boost::is_any_of(" "));
+        boost::split(strs, received_request, boost::is_any_of(" "));
         
         if(strs[0] == LOOKUP){
             std::string response = REPLY(mcast_addr, data_port, station_name);
@@ -146,7 +149,7 @@ void network_listener(int ctrl_port, std::string mcast_addr, int data_port,
                 syserr("Sending lookup message.");
 
         } else if(strs[0] == REXMIT){
-            packet_sender->post_message({ REXMIT, strs[1] });
+            packet_sender->post_message({ REXMIT, { 0, 0, strs[1] } });
         }
     }
 
@@ -195,7 +198,7 @@ void sender_thread::on_message_received(message msg){
 }
 
 void sender_thread::on_input_message(message msg){
-    sendto(sock, msg.msg.data(), msg.msg.size(), 0, 
+    sendto(sock, msg.msg, sizeof message, 0, 
         (struct sockaddr *) &destination_address, destination_address_len);
 }
 

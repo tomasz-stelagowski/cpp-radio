@@ -1,0 +1,6 @@
+*.o
+sikradio-sender 
+sikradio-receiver 
+test-receiver
+*~
+*.bak

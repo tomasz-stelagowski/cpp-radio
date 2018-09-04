@@ -131,8 +131,8 @@ void network_listener(int ctrl_port, std::string mcast_addr, int data_port,
         syserr("Could not bind listening socket");
 
     for(;;){
-        memset(udp_buffer, 0, (size_t)sizeof(udp_buffer));
-        if(recvfrom(sock, udp_buffer, sizeof(udp_buffer), 0, &client_address, &caddr_len) < 0)
+        memset(udp_buffer, 0, (size_t)UDP_BUFFER_SIZE);
+        if(recvfrom(sock, udp_buffer, UDP_BUFFER_SIZE, 0, &client_address, &caddr_len) < 0)
             syserr("Error with receiving datagram");
         
         std::string message(udp_buffer);

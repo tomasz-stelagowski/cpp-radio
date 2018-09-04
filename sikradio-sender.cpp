@@ -198,7 +198,7 @@ void sender_thread::on_message_received(message msg){
 }
 
 void sender_thread::on_input_message(message msg){
-    sendto(sock, msg.msg, sizeof message, 0, 
+    sendto(sock, msg.msg, sizeof(message), 0, 
         (struct sockaddr *) &destination_address, destination_address_len);
 }
 

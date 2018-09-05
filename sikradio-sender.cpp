@@ -78,6 +78,7 @@ public:
     void post_rexmit(std::string package_numbers);
 private:
     int history_count;
+    message_driven_thread<message>* packet_sender;
     std::set<uint64_t> rexmits_nums;
     std::mutex rexmits_nums_mutex;
     std::queue<uint64_t> packets_buffor;
@@ -259,12 +260,30 @@ void sender_thread::on_rexmit_message(message msg){
 // Rexmit and packet history manager class implementation
 // ******************************************************
 
-rexmit_thread::rexmit_thread(int rtime, int psize, int fsize) : time_driven_thread::time_driven_thread(rtime){
+rexmit_thread::rexmit_thread(int rtime, int psize, int fsize, message_driven_thread<message>* packet_sender) 
+    : time_driven_thread::time_driven_thread(rtime){
+    
+    this->packet_sender = packet_sender;
     history_count = fsize / psize;
 }
 
 void rexmit_thread::on_time_routine(){
-
+    std::vector<uint64_t> nums;
+    {
+        std::lock_guard<std::mutex> lock(rexmits_nums_mutex);
+        nums.assign(rexmits_nums.begin(), rexmits_nums.end());
+        rexmits_nums_mutex.clear();
+    }
+    {
+        std::lock_guard<std::mutex> lock(packets_mutex);
+        std::for_each(std::begin(nums), std::end(nums), [=](uint64_t num){ 
+            std::set<uint64_t>::iterator it = packets_storage.find(num);
+            if(it != std::end(packets_storage)){
+                packet_sender->post_message({ INPUT, it->second });
+            }
+         });
+    }
+    
 }
 
 void rexmit_thread::post_package(message msg){

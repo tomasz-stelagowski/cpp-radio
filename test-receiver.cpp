@@ -14,7 +14,7 @@
 struct audio_package {
     uint64_t session_id;
     uint64_t first_byte_num;
-    std::string audio_data;
+    char audio_data[8000];
 };
 
 int main(void)
@@ -44,16 +44,18 @@ int main(void)
 	}
 
 	addr_len = sizeof(struct sockaddr);
-	if ((numbytes = recvfrom(sockfd, &buf, sizeof(audio_package) , 0,
-		(struct sockaddr *)&their_addr, &addr_len)) == -1) {
-		perror("recvfrom");
-		exit(1);
+
+	while(1){
+		if ((numbytes = recvfrom(sockfd, &buf, sizeof(audio_package) , 0,
+			(struct sockaddr *)&their_addr, &addr_len)) == -1) {
+			perror("recvfrom");
+			exit(1);
+		}
+
+		printf("got packet from %s\n",inet_ntoa(their_addr.sin_addr));
+		printf("packet is %d bytes long\n",numbytes);
+		printf("packet contains %llu %llu \"%s\"\n",buf.session_id, buf.first_byte_num, buf.audio_data);
 	}
-
-	printf("got packet from %s\n",inet_ntoa(their_addr.sin_addr));
-	printf("packet is %d bytes long\n",numbytes);
-	printf("packet contains %d %d \"%s\"\n",buf.session_id, buf.first_byte_num, "aaa");
-
 	close(sockfd);
 
 	return 0;

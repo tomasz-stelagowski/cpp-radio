@@ -31,6 +31,20 @@ struct audio_package {
     std::string audio_data;
 };
 
+// Struct used for externaling package to one block of data
+// its not used as main package tranportede between thread 
+// because Flexible Array Member (FAM) could not be easily 
+// passed by value, which is by desing of thread communication in this
+// program, thats why in program audio_package is used leveraging std::string
+// and just before send its rewritten into net_auio_package
+struct net_audio_package {
+    uint64_t session_id;
+    uint64_t first_byte_num;
+    uint8_t audio_data[1];
+};
+
+
+//message send between threads
 struct message {
     std::string type;
     audio_package msg;
@@ -39,11 +53,12 @@ struct message {
 
 class sender_thread : public message_driven_thread<message> {
 public:
-    sender_thread(int data_port, std::string mcast_address);
+    sender_thread(int data_port, int psize, std::string mcast_address);
     void on_message_received(message msg);
     virtual ~sender_thread();
 private:
     int sock;
+    int psize;
     sockaddr_in destination_address;
     socklen_t destination_address_len;
     void on_input_message(message msg);
@@ -73,7 +88,7 @@ int main(int argc, char** argv) {
     ).count();
     std::cout << session_id << std::endl;
 
-    message_driven_thread<message>* broadcast_sender = new sender_thread(data_port, mcast_address);
+    message_driven_thread<message>* broadcast_sender = new sender_thread(data_port, psize, mcast_address);
     
     std::thread stdin_reader_thread(stdin_reader, session_id, psize, broadcast_sender);
     std::thread network_listener_thread(network_listener, ctrl_port, 
@@ -94,7 +109,7 @@ int main(int argc, char** argv) {
 // ******************************************************
 void stdin_reader(uint64_t session_id, int psize, message_driven_thread<message>* packet_sender){
     char* input_buff = new char[psize];
-    int packet_number = 0;
+    uint64_t packet_number = 0;
 
     do {
         memset(input_buff, 0, psize);
@@ -162,7 +177,8 @@ void network_listener(int ctrl_port, std::string mcast_addr, int data_port,
 // ******************************************************
 // Sender class implementation
 // ******************************************************
-sender_thread::sender_thread(int data_port, std::string mcast_address){
+sender_thread::sender_thread(int data_port, int psize, std::string mcast_address){
+    this->psize = psize;
     sock = socket(AF_INET, SOCK_DGRAM, 0);
     if(sock < 0) syserr("Could not create broadcast socket.");
 
@@ -200,8 +216,20 @@ void sender_thread::on_message_received(message msg){
 }
 
 void sender_thread::on_input_message(message msg){
-    sendto(sock, &msg.msg, sizeof(audio_package), 0, 
+    // net audio package off cpp necesity has audio_data of size 1 byte.
+    // it needs to be resized to psize so delta is +(psize-1)
+
+    size_t net_audio_package_size = (sizeof(net_audio_package) + psize - 1);
+    net_audio_package* package = (net_audio_package*)malloc(net_audio_package_size);
+
+    package->session_id = msg.msg.session_id;
+    package->first_byte_num = msg.msg.first_byte_num;
+    std::strncpy(package->audio_data, msg.msg.audio_data.c_str(), net_audio_package_size);
+
+    sendto(sock, package, net_audio_package_size, 0, 
         (struct sockaddr *) &destination_address, destination_address_len);
+
+    free(package);
 }
 
 void sender_thread::on_rexmit_message(message msg){

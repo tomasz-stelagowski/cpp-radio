@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <errno.h>
+#include <string>
 #include <string.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -10,6 +11,11 @@
 
 #define MAXBUFLEN 512
 
+struct audio_package {
+    uint64_t session_id;
+    uint64_t first_byte_num;
+    std::string audio_data;
+};
 
 int main(void)
 {
@@ -18,8 +24,8 @@ int main(void)
 	struct sockaddr_in their_addr; // connector's address information
 	socklen_t addr_len;
 	int numbytes;
-	char buf[MAXBUFLEN];
-
+	// char buf[MAXBUFLEN];
+	audio_package buf;
 
 	if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) == -1) {
 		perror("socket");
@@ -28,7 +34,7 @@ int main(void)
 
 	my_addr.sin_family = AF_INET;		 // host byte order
 	my_addr.sin_addr.s_addr = INADDR_ANY; // automatically fill with my IP
-	my_addr.sin_port = htons(20234);	 // short, network byte order
+	my_addr.sin_port = htons(20235);	 // short, network byte order
 	memset(&(my_addr.sin_zero), '\0', 8); // zero the rest of the struct
 
 	if (bind(sockfd, (struct sockaddr *)&my_addr,
@@ -38,7 +44,7 @@ int main(void)
 	}
 
 	addr_len = sizeof(struct sockaddr);
-	if ((numbytes = recvfrom(sockfd, buf, MAXBUFLEN-1 , 0,
+	if ((numbytes = recvfrom(sockfd, &buf, sizeof(audio_package) , 0,
 		(struct sockaddr *)&their_addr, &addr_len)) == -1) {
 		perror("recvfrom");
 		exit(1);
@@ -46,8 +52,7 @@ int main(void)
 
 	printf("got packet from %s\n",inet_ntoa(their_addr.sin_addr));
 	printf("packet is %d bytes long\n",numbytes);
-	buf[numbytes] = '\0';
-	printf("packet contains \"%s\"\n",buf);
+	printf("packet contains %d %d \"%s\"\n",buf.session_id, buf.audio_data, buf.audio_data);
 
 	close(sockfd);
 

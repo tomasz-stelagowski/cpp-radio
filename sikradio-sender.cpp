@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
     uint64_t session_id = std::chrono::duration_cast<std::chrono::seconds>(
         std::chrono::system_clock::now().time_since_epoch()
     ).count();
-
+    std::cout << session_id << std::endl;
 
     message_driven_thread<message>* broadcast_sender = new sender_thread(data_port, mcast_address);
     
@@ -200,7 +200,7 @@ void sender_thread::on_message_received(message msg){
 }
 
 void sender_thread::on_input_message(message msg){
-    sendto(sock, &msg.msg, sizeof(message), 0, 
+    sendto(sock, &msg.msg, sizeof(audio_package), 0, 
         (struct sockaddr *) &destination_address, destination_address_len);
 }
 

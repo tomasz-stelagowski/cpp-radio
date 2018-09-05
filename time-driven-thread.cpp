@@ -15,7 +15,7 @@ time_driven_thread::~time_driven_thread(){
 
 void time_driven_thread::process(){
     
-    std::this_thread::sleep_for(std::chrono::miliseconds(rtime));
+    std::this_thread::sleep_for(std::chrono::milliseconds(rtime));
 
     on_time_routine();
 }

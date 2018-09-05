@@ -19,9 +19,7 @@ public:
 
     void post_message(T data);
     void join();
-    virtual void on_message_received(T msg) {
-        std::cout <<"blabla"<< std::endl;
-    };
+    virtual void on_message_received(T msg){ };
 
 private:
     void process();

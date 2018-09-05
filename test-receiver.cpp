@@ -14,7 +14,7 @@
 struct audio_package {
     uint64_t session_id;
     uint64_t first_byte_num;
-    char audio_data[8000];
+    char audio_data[1400];
 };
 
 int main(void)

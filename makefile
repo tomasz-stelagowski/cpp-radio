@@ -11,7 +11,7 @@ err.o: err.h
 
 # message-driven-thread.o: message-driven-thread.hpp
 
-sikradio-sender.o sikradio-receiver.o: err.h message-driven-thread.hpp
+sikradio-sender.o sikradio-receiver.o: err.h message-driven-thread.hpp time-driven-thread.hpp
 
 sikradio-sender: sikradio-sender.o err.o
 

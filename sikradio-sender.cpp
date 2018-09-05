@@ -4,13 +4,18 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <set>
+#include <map>
+#include <queue>
 #include <vector>
+#include <mutex>
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
 #include "constants.hpp"
 namespace po = boost::program_options;
 
 #include "message-driven-thread.hpp"
+#include "time-driven-thread.hpp"
 #include "err.h"
 
 void parse_command_line(int argc, char** argv,
@@ -64,6 +69,21 @@ private:
     void on_input_message(message msg);
     void on_rexmit_message(message msg);
 };
+
+class rexmit_thread : public time_driven_thread {
+public:
+    rexmit_thread(int rtime);
+    void on_time_routine();
+    void post_package(message msg);
+    void post_rexmit(std::string package_numbers);
+private:
+    int history_count;
+    std::set<uint64_t> rexmits_nums;
+    std::mutex rexmits_nums_mutex;
+    std::queue<uint64_t> packets_buffor;
+    std::map<uint64_t, audio_package> packets_storage;
+    std::mutex packets_mutex;
+}
 
 void stdin_reader(uint64_t session_id, int psize, message_driven_thread<message>* packet_sender);
 
@@ -233,7 +253,40 @@ void sender_thread::on_input_message(message msg){
 }
 
 void sender_thread::on_rexmit_message(message msg){
+}
 
+// ******************************************************
+// Rexmit and packet history manager class implementation
+// ******************************************************
+
+rexmit_thread::rexmit_thread(int rtime, int psize, int fsize) : time_driven_thread(rtime){
+    history_count = fsize / psize;
+}
+
+void rexmit_thread::on_time_routine(){
+
+}
+
+void rexmit_thread::post_package(message msg){
+    std::lock_guard<std::mutex> lock(packets_mutex);
+
+    packets_buffor.push_back(msg.msg.first_byte_num);
+    packets_storage.insert( std::pair<uint64_t, audio_package>(msg.msg.first_byte_num, msg.msg) );
+
+    if(packets_buffor.size() > history_count){
+        uint64_t package_to_remove = packets_buffor.front();
+        packets_buffor.pop();
+        packets_storage.erase(package_to_remove);
+    }
+}
+
+void rexmit_thread::post_rexmit(std::string package_numbers){
+    std::vector<std::string> nums;
+    boost::split(nums, package_numbers, boost::is_any_of(","));
+
+    std::lock_guard<std::mutex> lock(rexmits_nums_mutex);
+    for_each(nums.begin(), nums.end(), 
+        [=](string num){ rexmits_nums.insert( boost::lexical_cast<uint64_t>(num) ); });
 }
 
 // ******************************************************

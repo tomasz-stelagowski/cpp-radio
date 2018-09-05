@@ -14,10 +14,11 @@ time_driven_thread::~time_driven_thread(){
 }
 
 void time_driven_thread::process(){
-    
-    std::this_thread::sleep_for(std::chrono::milliseconds(rtime));
+    while(1){
+        std::this_thread::sleep_for(std::chrono::milliseconds(rtime));
+        on_time_routine();
+    }
 
-    on_time_routine();
 }
 
 void time_driven_thread::join(){

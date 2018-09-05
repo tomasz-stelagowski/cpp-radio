@@ -86,10 +86,10 @@ private:
     std::mutex packets_mutex;
 };
 
-void stdin_reader(uint64_t session_id, int psize, message_driven_thread<message>* packet_sender);
+void stdin_reader(uint64_t session_id, int psize, message_driven_thread<message>* packet_sender, rexmit_thread* history_manager);
 
 void network_listener(int ctrl_port, std::string mcast_addr, int data_port, 
-    std::string station_name, message_driven_thread<message>* packet_sender);
+    std::string station_name, message_driven_thread<message>* packet_sender, rexmit_thread* history_manager);
 
 int main(int argc, char** argv) {
     std::string station_name;
@@ -107,17 +107,17 @@ int main(int argc, char** argv) {
     uint64_t session_id = std::chrono::duration_cast<std::chrono::seconds>(
         std::chrono::system_clock::now().time_since_epoch()
     ).count();
-    std::cout << session_id << std::endl;
-
     message_driven_thread<message>* broadcast_sender = new sender_thread(data_port, psize, mcast_address);
+    rexmit_thread* history_manager = new rexmit_thread(rtime, psize, fsize, broadcast_sender);
     
-    std::thread stdin_reader_thread(stdin_reader, session_id, psize, broadcast_sender);
+    std::thread stdin_reader_thread(stdin_reader, session_id, psize, broadcast_sender, history_manager);
     std::thread network_listener_thread(network_listener, ctrl_port, 
-        mcast_address, data_port, station_name, broadcast_sender);
+        mcast_address, data_port, station_name, broadcast_sender, history_manager);
 
     stdin_reader_thread.join();
     network_listener_thread.join();
     broadcast_sender->join();
+    history_manager->join();
 
     delete broadcast_sender;
 
@@ -128,7 +128,7 @@ int main(int argc, char** argv) {
 // Responsible for reading input in psize chunks of data
 // works in its own thread, proceeds data to broadcasting thread
 // ******************************************************
-void stdin_reader(uint64_t session_id, int psize, message_driven_thread<message>* packet_sender){
+void stdin_reader(uint64_t session_id, int psize, message_driven_thread<message>* packet_sender, rexmit_thread* history_manager){
     char* input_buff = new char[psize];
     uint64_t packet_number = 0;
 
@@ -137,6 +137,10 @@ void stdin_reader(uint64_t session_id, int psize, message_driven_thread<message>
         std::cin.read(input_buff, psize);
         if(std::cin){
             packet_sender->post_message({ 
+                INPUT, 
+                { session_id, packet_number, std::string(input_buff, psize) }
+            });
+            history_manager->post_package({ 
                 INPUT, 
                 { session_id, packet_number, std::string(input_buff, psize) }
             });
@@ -152,7 +156,7 @@ void stdin_reader(uint64_t session_id, int psize, message_driven_thread<message>
 // Responsible for listening for LOOKUP and REXMIT messages
 // ******************************************************
 void network_listener(int ctrl_port, std::string mcast_addr, int data_port, 
-    std::string station_name, message_driven_thread<message>* packet_sender){
+    std::string station_name, message_driven_thread<message>* packet_sender, rexmit_thread* history_manager){
 
     char* udp_buffer = new char[UDP_BUFFER_SIZE];
     
@@ -187,7 +191,7 @@ void network_listener(int ctrl_port, std::string mcast_addr, int data_port,
                 syserr("Sending lookup message.");
 
         } else if(strs[0] == REXMIT){
-            packet_sender->post_message({ REXMIT, { 0, 0, strs[1] } });
+            history_manager->post_rexmit(strs[1]);
         }
     }
 
@@ -254,6 +258,7 @@ void sender_thread::on_input_message(message msg){
 }
 
 void sender_thread::on_rexmit_message(message msg){
+
 }
 
 // ******************************************************
@@ -284,7 +289,6 @@ void rexmit_thread::on_time_routine(){
             }
          });
     }
-    
 }
 
 void rexmit_thread::post_package(message msg){
@@ -306,7 +310,7 @@ void rexmit_thread::post_rexmit(std::string package_numbers){
 
     std::lock_guard<std::mutex> lock(rexmits_nums_mutex);
     for_each(nums.begin(), nums.end(), 
-        [=](std::string num){ rexmits_nums.insert( boost::lexical_cast<uint64_t>(num) ); });
+        [=](std::string num){ rexmits_nums.insert( (uint64_t)atoi(num.c_str()) ); });
 }
 
 // ******************************************************

@@ -259,7 +259,7 @@ void sender_thread::on_rexmit_message(message msg){
 // Rexmit and packet history manager class implementation
 // ******************************************************
 
-rexmit_thread::rexmit_thread(int rtime, int psize, int fsize) : time_driven_thread(rtime){
+rexmit_thread::rexmit_thread(int rtime, int psize, int fsize) : time_driven_thread::time_driven_thread(rtime){
     history_count = fsize / psize;
 }
 

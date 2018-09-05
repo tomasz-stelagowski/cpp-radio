@@ -72,7 +72,7 @@ private:
 
 class rexmit_thread : public time_driven_thread {
 public:
-    rexmit_thread(int rtime, int psize, int fsize);
+    rexmit_thread(int rtime, int psize, int fsize, message_driven_thread<message>* packet_sender);
     void on_time_routine();
     void post_package(message msg);
     void post_rexmit(std::string package_numbers);
@@ -272,20 +272,15 @@ void rexmit_thread::on_time_routine(){
     {
         std::lock_guard<std::mutex> lock(rexmits_nums_mutex);
         nums.assign(rexmits_nums.begin(), rexmits_nums.end());
-        rexmits_nums_mutex.clear();
+        rexmits_nums.clear();
     }
     {
         std::lock_guard<std::mutex> lock(packets_mutex);
         std::for_each(std::begin(nums), std::end(nums), [=](uint64_t num){ 
-            std::set<uint64_t>::iterator it = packets_storage.find(num);
+            std::map<uint64_t, audio_package>::iterator it = packets_storage.find(num);
             
             if(it != std::end(packets_storage)){
-                message msg;
-                msg.type = INPUT;
-                msg.msg.session_id = it->second.session_id;
-                msg.msg.first_byte_num = it->second.first_byte_num;
-                msg.msg.audio_data = it->second.audio_data;
-                packet_sender->post_message(msg);
+                packet_sender->post_message({ INPUT, it->second });
             }
          });
     }

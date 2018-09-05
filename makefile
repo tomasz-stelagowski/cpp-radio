@@ -13,7 +13,7 @@ time-driven-thread.o: time-driven-thread.hpp
 
 sikradio-sender.o sikradio-receiver.o: err.h message-driven-thread.hpp time-driven-thread.hpp
 
-sikradio-sender: sikradio-sender.o err.o
+sikradio-sender: sikradio-sender.o err.o time-driven-thread.o
 
 sikradio-receiver: sikradio-receiver.o err.o
 

@@ -54,7 +54,7 @@ int main(void)
 
 		printf("got packet from %s\n",inet_ntoa(their_addr.sin_addr));
 		printf("packet is %d bytes long\n",numbytes);
-		printf("packet contains %llu %llu \"%s\"\n",buf.session_id, buf.first_byte_num, buf.audio_data);
+		printf("packet contains %lu %lu \"%s\"\n",buf.session_id, buf.first_byte_num, buf.audio_data);
 	}
 	close(sockfd);
 

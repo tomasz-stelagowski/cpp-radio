@@ -94,6 +94,7 @@ int main(int argc, char** argv) {
 // ******************************************************
 void stdin_reader(uint64_t session_id, int psize, message_driven_thread<message>* packet_sender){
     char* input_buff = new char[psize];
+    int packet_number = 0;
 
     do {
         memset(input_buff, 0, psize);
@@ -101,8 +102,9 @@ void stdin_reader(uint64_t session_id, int psize, message_driven_thread<message>
         if(std::cin){
             packet_sender->post_message({ 
                 INPUT, 
-                { session_id, 0, std::string(input_buff, psize) }
+                { session_id, packet_number, std::string(input_buff, psize) }
             });
+            packet_number += psize;
         }
     } while(std::cin);
 

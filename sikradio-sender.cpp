@@ -224,7 +224,7 @@ void sender_thread::on_input_message(message msg){
 
     package->session_id = msg.msg.session_id;
     package->first_byte_num = msg.msg.first_byte_num;
-    std::strncpy(package->audio_data, msg.msg.audio_data.c_str(), net_audio_package_size);
+    std::memcpy(package->audio_data, msg.msg.audio_data.c_str(), net_audio_package_size);
 
     sendto(sock, package, net_audio_package_size, 0, 
         (struct sockaddr *) &destination_address, destination_address_len);

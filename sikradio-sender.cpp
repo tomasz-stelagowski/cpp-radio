@@ -278,8 +278,14 @@ void rexmit_thread::on_time_routine(){
         std::lock_guard<std::mutex> lock(packets_mutex);
         std::for_each(std::begin(nums), std::end(nums), [=](uint64_t num){ 
             std::set<uint64_t>::iterator it = packets_storage.find(num);
+            
             if(it != std::end(packets_storage)){
-                packet_sender->post_message({ INPUT, { it->second.session_id, it->second.first_byte_num, it->second.audio_data } });
+                message msg;
+                msg.type = INPUT;
+                msg.msg.session_id = it->second.session_id;
+                msg.msg.first_byte_num = it->second.first_byte_num;
+                msg.msg.audio_data = it->second.audio_data;
+                packet_sender->post_message(msg);
             }
          });
     }

@@ -279,7 +279,7 @@ void rexmit_thread::on_time_routine(){
         std::for_each(std::begin(nums), std::end(nums), [=](uint64_t num){ 
             std::set<uint64_t>::iterator it = packets_storage.find(num);
             if(it != std::end(packets_storage)){
-                packet_sender->post_message({ INPUT, it->second });
+                packet_sender->post_message({ INPUT, (audio_package)it->second });
             }
          });
     }

@@ -72,7 +72,7 @@ private:
 
 class rexmit_thread : public time_driven_thread {
 public:
-    rexmit_thread(int rtime);
+    rexmit_thread(int rtime, int psize, int fsize);
     void on_time_routine();
     void post_package(message msg);
     void post_rexmit(std::string package_numbers);
@@ -83,7 +83,7 @@ private:
     std::queue<uint64_t> packets_buffor;
     std::map<uint64_t, audio_package> packets_storage;
     std::mutex packets_mutex;
-}
+};
 
 void stdin_reader(uint64_t session_id, int psize, message_driven_thread<message>* packet_sender);
 
@@ -270,10 +270,10 @@ void rexmit_thread::on_time_routine(){
 void rexmit_thread::post_package(message msg){
     std::lock_guard<std::mutex> lock(packets_mutex);
 
-    packets_buffor.push_back(msg.msg.first_byte_num);
+    packets_buffor.push(msg.msg.first_byte_num);
     packets_storage.insert( std::pair<uint64_t, audio_package>(msg.msg.first_byte_num, msg.msg) );
 
-    if(packets_buffor.size() > history_count){
+    if((int)packets_buffor.size() > history_count){
         uint64_t package_to_remove = packets_buffor.front();
         packets_buffor.pop();
         packets_storage.erase(package_to_remove);
@@ -286,7 +286,7 @@ void rexmit_thread::post_rexmit(std::string package_numbers){
 
     std::lock_guard<std::mutex> lock(rexmits_nums_mutex);
     for_each(nums.begin(), nums.end(), 
-        [=](string num){ rexmits_nums.insert( boost::lexical_cast<uint64_t>(num) ); });
+        [=](std::string num){ rexmits_nums.insert( boost::lexical_cast<uint64_t>(num) ); });
 }
 
 // ******************************************************

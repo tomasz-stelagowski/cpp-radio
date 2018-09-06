@@ -249,9 +249,9 @@ void sender_thread::on_input_message(message msg){
 
     package->session_id = htobe64(msg.msg.session_id);
     package->first_byte_num = htobe64(msg.msg.first_byte_num);
-    std::memcpy(package->audio_data, msg.msg.audio_data.c_str(), net_audio_package_size-1);
+    std::memcpy(package->audio_data, msg.msg.audio_data.data(), net_audio_package_size);
 
-    sendto(sock, package, net_audio_package_size, 0, 
+    sendto(sock, package, net_audio_package_size-1, 0, 
         (struct sockaddr *) &destination_address, destination_address_len);
 
     free(package);
@@ -306,7 +306,7 @@ void rexmit_thread::post_rexmit(std::string package_numbers){
 
     std::lock_guard<std::mutex> lock(rexmits_nums_mutex);
     for_each(nums.begin(), nums.end(), 
-        [=](std::string num){ rexmits_nums.insert( (uint64_t)atoi(num.c_str()) ); });
+        [=](std::string num){ rexmits_nums.insert( (uint64_t)atoi(num.data()) ); });
 }
 
 // ******************************************************

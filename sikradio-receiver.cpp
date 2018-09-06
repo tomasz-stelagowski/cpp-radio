@@ -32,7 +32,7 @@ void parse_command_line(int argc, char** argv,
 
 class timer : public time_driven_thread {
 public:
-    timer();
+    timer(int ctrl_port, std::string discovery_address);
     ~timer();
 private:
     int sock;

@@ -30,5 +30,5 @@ void time_driven_thread::exit(){
 }
 
 void time_driven_thread::detach(){
-    this->worker_thread.detach();
+    this->worker_thread->detach();
 }

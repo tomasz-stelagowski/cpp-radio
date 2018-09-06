@@ -40,7 +40,7 @@ private:
     socklen_t destination_address_len;
     void on_time_routine();
     std::string lookup_msg;
-}
+};
 
 int main(){
     std::string discovery_address;
@@ -76,7 +76,7 @@ timer::timer(int ctrl_port, std::string discovery_address) : time_driven_thread(
     lookup_msg = LOOKUP;
 }
 
-timer::~~timer(){
+timer::~timer(){
     close(sock);
 }
 

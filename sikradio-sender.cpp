@@ -118,8 +118,6 @@ int main(int argc, char** argv) {
     history_manager->exit();
     network_listener_thread.detach();
 
-    std::cout << "nearly all\n";
-
     return 0;
 }
 

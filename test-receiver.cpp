@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <string>
 #include <string.h>
+#include <endian.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -51,6 +52,9 @@ int main(void)
 			perror("recvfrom");
 			exit(1);
 		}
+
+        buf.session_id = htobe64(buf.session_id);
+        buf.first_byte_num = htobe64(buf.first_byte_num);
 
 		printf("got packet from %s\n",inet_ntoa(their_addr.sin_addr));
 		printf("packet is %d bytes long\n",numbytes);

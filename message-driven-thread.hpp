@@ -23,7 +23,7 @@ public:
 
 private:
     void process();
-
+    bool exit = false;
     std::thread* worker_thread;
     std::queue<T> message_queue;
     std::mutex queue_lock;
@@ -59,7 +59,7 @@ void message_driven_thread<T>::post_message(T data){
 
 template <class T>
 void message_driven_thread<T>::process(){
-    while(1){
+    while(!exit){
         T msg;
         {
             std::unique_lock<std::mutex> lk(queue_lock);

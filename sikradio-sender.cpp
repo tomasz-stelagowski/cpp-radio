@@ -67,7 +67,6 @@ private:
     sockaddr_in destination_address;
     socklen_t destination_address_len;
     void on_input_message(message msg);
-    void on_rexmit_message(message msg);
 };
 
 class rexmit_thread : public time_driven_thread {
@@ -115,8 +114,8 @@ int main(int argc, char** argv) {
         mcast_address, data_port, station_name, broadcast_sender, history_manager);
 
     stdin_reader_thread.join();
-    network_listener_thread.join();
     broadcast_sender->join();
+    network_listener_thread.join();
     history_manager->join();
 
     delete broadcast_sender;
@@ -147,6 +146,8 @@ void stdin_reader(uint64_t session_id, int psize, message_driven_thread<message>
             packet_number += psize;
         }
     } while(std::cin);
+
+    packet_sender->post_message({EXIT, {0, 0, ""}});
 
     delete[] input_buff;
 }
@@ -235,8 +236,8 @@ sender_thread::~sender_thread(){
 void sender_thread::on_message_received(message msg){
     if(msg.type == INPUT){
         on_input_message(msg);
-    } else if(msg.type == REXMIT){
-        on_input_message(msg);
+    } else if(msg.type == EXIT){
+        exit = true;
     }
 }
 
@@ -255,10 +256,6 @@ void sender_thread::on_input_message(message msg){
         (struct sockaddr *) &destination_address, destination_address_len);
 
     free(package);
-}
-
-void sender_thread::on_rexmit_message(message msg){
-
 }
 
 // ******************************************************

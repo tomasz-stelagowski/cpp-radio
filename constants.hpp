@@ -4,5 +4,5 @@
     + std::to_string(data_port) + " " + station_name
 
 #define INPUT "INPUT"
-
+#define EXIT "EXIT"
 #define UDP_BUFFER_SIZE 1400

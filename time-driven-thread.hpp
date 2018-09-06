@@ -15,10 +15,13 @@ public:
 
     void join();
     virtual void on_time_routine(){ }
+    void exit();
+    void detach();
 
 private:
     void process();
     int rtime;
+    bool exit_var;
 
     std::thread* worker_thread;
 };

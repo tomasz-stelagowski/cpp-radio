@@ -14,7 +14,7 @@ time_driven_thread::~time_driven_thread(){
 }
 
 void time_driven_thread::process(){
-    while(1){
+    while(!exit_var){
         std::this_thread::sleep_for(std::chrono::milliseconds(rtime));
         on_time_routine();
     }
@@ -23,4 +23,12 @@ void time_driven_thread::process(){
 
 void time_driven_thread::join(){
     worker_thread->join();
+}
+
+void time_driven_thread::exit(){
+    this->exit_var = false;
+}
+
+void time_driven_thread::detach(){
+    this->worker_thread.detach();
 }

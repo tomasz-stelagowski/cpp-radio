@@ -115,10 +115,11 @@ int main(int argc, char** argv) {
 
     stdin_reader_thread.join();
     broadcast_sender->join();
+    history_manager->exit();
     network_listener_thread.detach();
-    history_manager->detach();
 
     delete broadcast_sender;
+    delete history_manager;
 
     return 0;
 }

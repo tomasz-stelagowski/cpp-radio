@@ -115,8 +115,8 @@ int main(int argc, char** argv) {
 
     stdin_reader_thread.join();
     broadcast_sender->join();
-    network_listener_thread.join();
-    history_manager->join();
+    // network_listener_thread.join();
+    // history_manager->join();
 
     delete broadcast_sender;
 

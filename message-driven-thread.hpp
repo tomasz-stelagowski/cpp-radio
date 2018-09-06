@@ -23,11 +23,12 @@ public:
 
 private:
     void process();
-    bool exit = false;
     std::thread* worker_thread;
     std::queue<T> message_queue;
     std::mutex queue_lock;
     std::condition_variable m_cv;
+protected:
+    bool exit = false;
 };
 
 

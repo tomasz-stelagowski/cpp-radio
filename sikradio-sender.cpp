@@ -9,6 +9,7 @@
 #include <queue>
 #include <vector>
 #include <mutex>
+#include <endian.h>
 #include <boost/program_options.hpp>
 #include <boost/algorithm/string.hpp>
 #include "constants.hpp"
@@ -246,8 +247,8 @@ void sender_thread::on_input_message(message msg){
     size_t net_audio_package_size = (sizeof(net_audio_package) + psize - 1);
     net_audio_package* package = (net_audio_package*)malloc(net_audio_package_size);
 
-    package->session_id = msg.msg.session_id;
-    package->first_byte_num = msg.msg.first_byte_num;
+    package->session_id = htobe64(msg.msg.session_id);
+    package->first_byte_num = htobe64(msg.msg.first_byte_num);
     std::memcpy(package->audio_data, msg.msg.audio_data.c_str(), net_audio_package_size);
 
     sendto(sock, package, net_audio_package_size, 0, 

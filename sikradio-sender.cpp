@@ -244,12 +244,12 @@ void sender_thread::on_input_message(message msg){
     // net audio package off cpp necesity has audio_data of size 1 byte.
     // it needs to be resized to psize so delta is +(psize-1)
 
-    size_t net_audio_package_size = (sizeof(net_audio_package) + psize - 1);
+    size_t net_audio_package_size = (sizeof(net_audio_package) + psize);
     net_audio_package* package = (net_audio_package*)malloc(net_audio_package_size);
 
     package->session_id = htobe64(msg.msg.session_id);
     package->first_byte_num = htobe64(msg.msg.first_byte_num);
-    std::memcpy(package->audio_data, msg.msg.audio_data.c_str(), net_audio_package_size);
+    std::memcpy(package->audio_data, msg.msg.audio_data.c_str(), net_audio_package_size-1);
 
     sendto(sock, package, net_audio_package_size, 0, 
         (struct sockaddr *) &destination_address, destination_address_len);
